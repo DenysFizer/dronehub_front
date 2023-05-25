@@ -1,15 +1,19 @@
-import React, {useState} from "react";
+import React, {useContext, useState} from "react";
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import {Button} from "@mui/material";
 import LockIcon from '@mui/icons-material/Lock';
 import {Link, Navigate} from "react-router-dom";
+import {AuthContext} from "../context";
 const Page = () => {
     const [email, setemail]=useState('')
     const [password, setpassword]=useState('')
     const [updatedlogin, setUpdatedlogin] = useState(email);
     const [updatedpass, setUpdatedpass] = useState(password);
     const [redirect, setRedirect] = useState(false);
+    const [errlog, setErrlog] = useState(false);
+    const [isloading, setIsloading] = useState(false);
+    const {isAuth,setIsAuth}= useContext(AuthContext)
 
     function viewlogin(){
         setUpdatedlogin(email)
@@ -18,7 +22,7 @@ const Page = () => {
         setUpdatedpass(password)
     }
 
-    async function submit(){
+    async function submit1(){
         console.log({
             email,
             password
@@ -33,11 +37,20 @@ const Page = () => {
                 password
             })
         })
+        if (response.status!==200){
+            setErrlog(true)
+            setIsloading(true)
+            console.log('Помилка авторизації')
 
-        setRedirect(true);
+        }else {
+            setIsAuth(true);
+            localStorage.setItem('auth','true');
+            setRedirect(true);
+        }
+        setIsloading(false)
     }
     if(redirect) {
-        return (<Navigate to="/"/>)
+        return (<Navigate to="/about"/>)
     }
 
     return (
@@ -65,8 +78,8 @@ const Page = () => {
                     inputProps={{style: {fontSize: 30}}}
                     label="Логін"
                     variant="outlined"
-                    error={email === ""}
-                    helperText={email === "" ? 'Логін не може бути пустим!' : ' '}
+                    error={email === "" || (errlog===true && !isloading)}
+                    helperText={email === "" ? 'Пароль не може бути пустим' : errlog===true ? 'Помилка авторизації': ' '}
                     onChange={event => setemail(event.target.value)}
                 />
 
@@ -80,10 +93,11 @@ const Page = () => {
                     autoComplete="current-password"
                     inputProps={{style: {fontSize: 30}}}
                     variant="outlined"
-                    error={password === ""}
-                    helperText={password === "" ? 'Пароль не може бути пустим' : ' '}
+                    error={password === "" || (errlog===true && !isloading)}
+                    helperText={password === "" ? 'Пароль не може бути пустим' : errlog===true ? 'Помилка авторизації': ' '}
                     onChange={event => setpassword(event.target.value)}
                 />
+
                 <Button
                     color="success"
                     disabled = {password === "" || email === ""}
@@ -95,11 +109,12 @@ const Page = () => {
                     onClick={() => {
                         viewlogin();
                         viewpass();
-                        submit();
+                        submit1();
                     }
                     }>
                     Ввійти
                 </Button>
+
             <Link to="/register" >
                 <Button
                     variant="text"
@@ -113,6 +128,7 @@ const Page = () => {
             </Link>
 
             </Box>
+
             <h1> Login: {updatedlogin}</h1>
             <h1> Password: {updatedpass}</h1>
         </div>
